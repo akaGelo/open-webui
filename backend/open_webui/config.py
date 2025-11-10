@@ -1001,10 +1001,34 @@ OLLAMA_BASE_URLS = PersistentConfig(
     "OLLAMA_BASE_URLS", "ollama.base_urls", OLLAMA_BASE_URLS
 )
 
+# Base model for API configuration validation
+class BaseApiConfigModel(BaseModel):
+    enable: Optional[bool] = None
+    tags: Optional[list[str]] = None
+    prefix_id: Optional[str] = None
+    model_ids: Optional[list[str]] = None
+    connection_type: Optional[str] = None
+
+
+class OllamaApiConfigModel(BaseApiConfigModel):
+    key: Optional[str] = None
+
+
+# Load API configuration from environment variable
+try:
+    ollama_api_configs_env = json.loads(os.environ.get("OLLAMA_API_CONFIGS", "{}"))
+    ollama_api_configs = {
+        key: OllamaApiConfigModel(**config).model_dump()
+        for key, config in ollama_api_configs_env.items()
+    }
+except Exception as e:
+    log.exception(f"Error loading OLLAMA_API_CONFIGS: {e}")
+    ollama_api_configs = {}
+
 OLLAMA_API_CONFIGS = PersistentConfig(
     "OLLAMA_API_CONFIGS",
     "ollama.api_configs",
-    {},
+    ollama_api_configs,
 )
 
 ####################################
@@ -1053,10 +1077,28 @@ OPENAI_API_BASE_URLS = PersistentConfig(
     "OPENAI_API_BASE_URLS", "openai.api_base_urls", OPENAI_API_BASE_URLS
 )
 
+
+class OpenAIApiConfigModel(BaseApiConfigModel):
+    auth_type: Optional[str] = None
+    headers: Optional[dict] = None
+    azure: Optional[bool] = None
+    api_version: Optional[str] = None
+
+
+try:
+    openai_api_configs_env = json.loads(os.environ.get("OPENAI_API_CONFIGS", "{}"))
+    openai_api_configs = {
+        key: OpenAIApiConfigModel(**config).model_dump()
+        for key, config in openai_api_configs_env.items()
+    }
+except Exception as e:
+    log.exception(f"Error loading OPENAI_API_CONFIGS: {e}")
+    openai_api_configs = {}
+
 OPENAI_API_CONFIGS = PersistentConfig(
     "OPENAI_API_CONFIGS",
     "openai.api_configs",
-    {},
+    openai_api_configs,
 )
 
 # Get the actual OpenAI API key based on the base URL
