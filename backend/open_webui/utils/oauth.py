@@ -1486,9 +1486,13 @@ class OAuthManager:
                 token=token,
             )
 
+            # Synchronize oauth_session_id cookie lifetime with JWT token expiration
+            jwt_duration = parse_duration(JWT_EXPIRES_IN.value)
+
             response.set_cookie(
                 key="oauth_session_id",
                 value=session.id,
+                max_age=int(jwt_duration.total_seconds()) if jwt_duration else None,
                 httponly=True,
                 samesite=WEBUI_AUTH_COOKIE_SAME_SITE,
                 secure=WEBUI_AUTH_COOKIE_SECURE,
